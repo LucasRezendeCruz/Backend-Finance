@@ -1,0 +1,121 @@
+@Finance.Api_HostAddress = http://localhost:5178
+
+### Health Check
+GET {{Finance.Api_HostAddress}}/api/v1/health
+Accept: application/json
+
+### Register (Web - recebe Access JWT no JSON e Refresh Token em Cookie HttpOnly)
+POST {{Finance.Api_HostAddress}}/api/v1/auth/register
+Content-Type: application/json
+Origin: http://localhost:5173
+
+{
+  "name": "Lucas Dev",
+  "email": "lucas.dev@exemplo.com",
+  "password": "SenhaForte123!",
+  "clientType": "web",
+  "deviceName": "VS Code REST Client"
+}
+
+### Login (Mobile - recebe Access JWT e Refresh Token no JSON)
+# @name mobileLogin
+POST {{Finance.Api_HostAddress}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "lucas.dev@exemplo.com",
+  "password": "SenhaForte123!",
+  "clientType": "mobile",
+  "deviceName": "Expo Simulator"
+}
+
+### Refresh (Web - envia Cookie HttpOnly + X-Client-Type + Origin)
+POST {{Finance.Api_HostAddress}}/api/v1/auth/refresh
+X-Client-Type: web
+Origin: http://localhost:5173
+
+### Refresh (Mobile - envia refreshToken no corpo JSON)
+POST {{Finance.Api_HostAddress}}/api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{mobileLogin.response.body.$.refreshToken}}",
+  "clientType": "mobile",
+  "deviceName": "Expo Simulator"
+}
+
+### Listar sessões ativas
+GET {{Finance.Api_HostAddress}}/api/v1/auth/sessions
+Authorization: Bearer {{mobileLogin.response.body.$.accessToken}}
+
+### Listar Audit Log de segurança (alertsOnly=true filtra falhas, bloqueios, reuso e revogações)
+GET {{Finance.Api_HostAddress}}/api/v1/security/audit-logs?page=1&pageSize=20&alertsOnly=false
+Authorization: Bearer {{mobileLogin.response.body.$.accessToken}}
+
+### Logout (Web - requer X-Client-Type: web + Origin)
+POST {{Finance.Api_HostAddress}}/api/v1/auth/logout
+X-Client-Type: web
+Origin: http://localhost:5173
+
+### Criar conta bancária
+# @name createAccount
+POST {{Finance.Api_HostAddress}}/api/v1/accounts
+Authorization: Bearer {{mobileLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nubank Principal",
+  "type": "CHECKING",
+  "initialBalance": 2500.00,
+  "color": "#ff5a36"
+}
+
+### Criar cartão de crédito
+# @name createCard
+POST {{Finance.Api_HostAddress}}/api/v1/credit-cards
+Authorization: Bearer {{mobileLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Cartão Pulse Black",
+  "creditLimit": 8000.00,
+  "closingDay": 18,
+  "dueDay": 25,
+  "defaultAccountId": "{{createAccount.response.body.$.id}}",
+  "color": "#18181b"
+}
+
+### Criar compra parcelada no cartão (6x)
+# @name createInstallments
+POST {{Finance.Api_HostAddress}}/api/v1/transactions
+Authorization: Bearer {{mobileLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "creditCardId": "{{createCard.response.body.$.id}}",
+  "type": "EXPENSE",
+  "description": "Notebook Trabalho",
+  "amount": 3000.00,
+  "transactionDate": "2026-11-24",
+  "installments": 6
+}
+
+### Listar parcelamentos ativos
+GET {{Finance.Api_HostAddress}}/api/v1/transactions/installment-groups
+Authorization: Bearer {{mobileLogin.response.body.$.accessToken}}
+
+### Antecipar últimas 2 parcelas para a fatura aberta atual (estilo Nubank, com desconto)
+POST {{Finance.Api_HostAddress}}/api/v1/transactions/installment-groups/{{createInstallments.response.body.$[0].installmentGroupId}}/anticipate
+Authorization: Bearer {{mobileLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "count": 2,
+  "selectionOrder": "FROM_LAST",
+  "mode": "MOVE_TO_INVOICE",
+  "discountAmount": 15.00
+}
+
+### Resumo mensal do Dashboard
+GET {{Finance.Api_HostAddress}}/api/v1/dashboard/monthly-summary?year=2026&month=11
+Authorization: Bearer {{mobileLogin.response.body.$.accessToken}}
