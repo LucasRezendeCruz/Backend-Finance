@@ -8,7 +8,12 @@ internal sealed class CategoryConfiguration : IEntityTypeConfiguration<Category>
 {
     public void Configure(EntityTypeBuilder<Category> builder)
     {
-        builder.ToTable("categories");
+        builder.ToTable("categories", table =>
+        {
+            table.HasCheckConstraint(
+                "CK_categories_monthly_budget",
+                "monthly_budget IS NULL OR monthly_budget > 0");
+        });
         builder.HasKey(c => c.Id);
 
         builder.Property(c => c.Id).HasColumnName("id").ValueGeneratedNever();
@@ -17,6 +22,7 @@ internal sealed class CategoryConfiguration : IEntityTypeConfiguration<Category>
         builder.Property(c => c.Type).HasScreamingSnakeCaseConversion(20).HasColumnName("type").IsRequired();
         builder.Property(c => c.Icon).HasColumnName("icon").HasMaxLength(60).IsRequired();
         builder.Property(c => c.Color).HasColumnName("color").HasMaxLength(20).IsRequired();
+        builder.Property(c => c.MonthlyBudget).HasColumnName("monthly_budget").HasPrecision(18, 2);
         builder.Property(c => c.IsArchived).HasColumnName("is_archived").IsRequired();
 
         builder.HasOne<User>()

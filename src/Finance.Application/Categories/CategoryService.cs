@@ -44,7 +44,8 @@ public sealed class CategoryService(
             trimmedName,
             command.Type,
             command.Icon ?? "tag",
-            command.Color ?? "#ff5a36");
+            command.Color ?? "#ff5a36",
+            command.MonthlyBudget);
 
         await categoryRepository.AddAsync(category, ct);
         await unitOfWork.SaveChangesAsync(ct);
@@ -68,7 +69,28 @@ public sealed class CategoryService(
                 "Já existe uma categoria com este nome para o mesmo tipo.");
         }
 
-        category.Update(trimmedName, command.Icon ?? string.Empty, command.Color ?? string.Empty);
+        category.Update(
+            trimmedName,
+            command.Icon ?? string.Empty,
+            command.Color ?? string.Empty,
+            command.MonthlyBudget,
+            command.UpdateBudget);
+
+        await unitOfWork.SaveChangesAsync(ct);
+
+        return MapDto(category);
+    }
+
+    public async Task<CategoryDto> SetMonthlyBudgetAsync(
+        Guid id,
+        decimal? monthlyBudget,
+        CancellationToken ct = default)
+    {
+        Guid userId = ApplicationContextHelper.RequireUserId(currentUserService);
+        Category category = await categoryRepository.GetByIdAsync(userId, id, ct)
+            ?? throw AppException.NotFound("category_not_found", "Categoria não encontrada.");
+
+        category.SetMonthlyBudget(monthlyBudget);
         await unitOfWork.SaveChangesAsync(ct);
 
         return MapDto(category);
@@ -93,5 +115,6 @@ public sealed class CategoryService(
             category.Type.ToScreamingSnakeCase(),
             category.Icon,
             category.Color,
-            category.IsArchived);
+            category.IsArchived,
+            category.MonthlyBudget);
 }

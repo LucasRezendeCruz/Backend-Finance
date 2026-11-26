@@ -4,8 +4,12 @@ using Finance.Domain.Enums;
 
 namespace Finance.Api.Services;
 
-internal sealed class HttpCurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
+internal sealed class HttpCurrentUserService(IHttpContextAccessor httpContextAccessor)
+    : ICurrentUserService, ICurrentUserOverride
 {
+    private Guid? _overrideUserId;
+    private string? _overrideUserAgent;
+
     public Guid? UserId
     {
         get
@@ -13,7 +17,10 @@ internal sealed class HttpCurrentUserService(IHttpContextAccessor httpContextAcc
             string? sub = httpContextAccessor.HttpContext?.User.FindFirstValue("sub")
                 ?? httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            return Guid.TryParse(sub, out Guid userId) ? userId : null;
+            if (Guid.TryParse(sub, out Guid userId))
+                return userId;
+
+            return _overrideUserId;
         }
     }
 
@@ -47,5 +54,28 @@ internal sealed class HttpCurrentUserService(IHttpContextAccessor httpContextAcc
     }
 
     public string UserAgent
-        => httpContextAccessor.HttpContext?.Request.Headers.UserAgent.ToString() ?? string.Empty;
+        => _overrideUserAgent ?? httpContextAccessor.HttpContext?.Request.Headers.UserAgent.ToString() ?? string.Empty;
+
+    public IDisposable RunAs(Guid userId, string userAgent)
+    {
+        Guid? previousUserId = _overrideUserId;
+        string? previousUserAgent = _overrideUserAgent;
+
+        _overrideUserId = userId;
+        _overrideUserAgent = userAgent;
+
+        return new RestoreScope(this, previousUserId, previousUserAgent);
+    }
+
+    private sealed class RestoreScope(
+        HttpCurrentUserService owner,
+        Guid? previousUserId,
+        string? previousUserAgent) : IDisposable
+    {
+        public void Dispose()
+        {
+            owner._overrideUserId = previousUserId;
+            owner._overrideUserAgent = previousUserAgent;
+        }
+    }
 }

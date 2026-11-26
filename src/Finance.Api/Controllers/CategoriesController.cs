@@ -16,12 +16,17 @@ public sealed class CategoriesController(ICategoryService categoryService) : Con
         string Name,
         CategoryType Type,
         string? Icon = null,
-        string? Color = null);
+        string? Color = null,
+        decimal? MonthlyBudget = null);
 
     public sealed record UpdateCategoryRequest(
         string Name,
         string? Icon = null,
-        string? Color = null);
+        string? Color = null,
+        decimal? MonthlyBudget = null,
+        bool UpdateBudget = false);
+
+    public sealed record SetMonthlyBudgetRequest(decimal? MonthlyBudget);
 
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<CategoryDto>), StatusCodes.Status200OK)]
@@ -42,7 +47,7 @@ public sealed class CategoriesController(ICategoryService categoryService) : Con
     public async Task<IActionResult> Create([FromBody] CreateCategoryRequest request, CancellationToken ct = default)
     {
         CategoryDto created = await categoryService.CreateAsync(
-            new CreateCategoryCommand(request.Name, request.Type, request.Icon, request.Color),
+            new CreateCategoryCommand(request.Name, request.Type, request.Icon, request.Color, request.MonthlyBudget),
             ct);
 
         return StatusCode(StatusCodes.Status201Created, created);
@@ -59,8 +64,23 @@ public sealed class CategoriesController(ICategoryService categoryService) : Con
         CancellationToken ct = default)
         => Ok(await categoryService.UpdateAsync(
             id,
-            new UpdateCategoryCommand(request.Name, request.Icon, request.Color),
+            new UpdateCategoryCommand(
+                request.Name,
+                request.Icon,
+                request.Color,
+                request.MonthlyBudget,
+                request.UpdateBudget || request.MonthlyBudget.HasValue),
             ct));
+
+    [HttpPatch("{id:guid}/budget")]
+    [ProducesResponseType(typeof(CategoryDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> SetMonthlyBudget(
+        Guid id,
+        [FromBody] SetMonthlyBudgetRequest request,
+        CancellationToken ct = default)
+        => Ok(await categoryService.SetMonthlyBudgetAsync(id, request.MonthlyBudget, ct));
 
     [HttpPatch("{id:guid}/archive")]
     [ProducesResponseType(typeof(CategoryDto), StatusCodes.Status200OK)]

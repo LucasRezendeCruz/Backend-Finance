@@ -5,6 +5,7 @@ using Finance.Application.CreditCards;
 using Finance.Application.Dashboard;
 using Finance.Application.Recurrences;
 using Finance.Application.Security;
+using Finance.Application.Telegram;
 using Finance.Application.Transactions;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +26,7 @@ public static class DependencyInjection
         services.AddScoped<ITransactionService, TransactionService>();
         services.AddScoped<IRecurrenceService, RecurrenceService>();
         services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<ITelegramBotService, TelegramBotService>();
 
         return services;
     }

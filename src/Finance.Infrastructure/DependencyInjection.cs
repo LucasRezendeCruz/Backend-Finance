@@ -51,6 +51,7 @@ public static class DependencyInjection
         services.AddScoped<ICreditCardRepository, CreditCardRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<IRecurrenceRepository, RecurrenceRepository>();
+        services.AddScoped<ITelegramRepository, TelegramRepository>();
 
         return services;
     }

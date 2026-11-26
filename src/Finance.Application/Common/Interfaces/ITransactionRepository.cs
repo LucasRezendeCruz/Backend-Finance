@@ -32,6 +32,12 @@ public interface ITransactionRepository
         int month,
         IReadOnlyCollection<Guid> monthInvoiceIds,
         CancellationToken ct = default);
+    Task<IReadOnlyList<Transaction>> GetForProjectionRangeAsync(
+        Guid userId,
+        DateOnly startDate,
+        DateOnly endDate,
+        IReadOnlyCollection<Guid> invoiceIds,
+        CancellationToken ct = default);
     Task<IReadOnlyList<Transaction>> GetUpcomingPendingAccountTransactionsAsync(
         Guid userId,
         DateOnly fromDate,

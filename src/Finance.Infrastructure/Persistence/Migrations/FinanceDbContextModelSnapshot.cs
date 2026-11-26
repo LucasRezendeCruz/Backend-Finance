@@ -98,6 +98,11 @@ namespace Finance.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_archived");
 
+                    b.Property<decimal?>("MonthlyBudget")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("monthly_budget");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -119,7 +124,10 @@ namespace Finance.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserId", "Name", "Type")
                         .IsUnique();
 
-                    b.ToTable("categories", "finance");
+                    b.ToTable("categories", "finance", t =>
+                        {
+                            t.HasCheckConstraint("CK_categories_monthly_budget", "monthly_budget IS NULL OR monthly_budget > 0");
+                        });
                 });
 
             modelBuilder.Entity("Finance.Domain.Entities.CreditCard", b =>
@@ -428,6 +436,103 @@ namespace Finance.Infrastructure.Persistence.Migrations
                     b.ToTable("security_audit_logs", "finance");
                 });
 
+            modelBuilder.Entity("Finance.Domain.Entities.TelegramLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("DefaultAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("default_account_id");
+
+                    b.Property<Guid?>("DefaultCreditCardId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("default_credit_card_id");
+
+                    b.Property<Guid?>("LastBotTransactionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("last_bot_transaction_id");
+
+                    b.Property<DateTimeOffset?>("LastInteractionAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_interaction_at_utc");
+
+                    b.Property<DateTimeOffset>("LinkedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("linked_at_utc");
+
+                    b.Property<long>("TelegramChatId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("telegram_chat_id");
+
+                    b.Property<string>("TelegramFirstName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("telegram_first_name");
+
+                    b.Property<string>("TelegramUsername")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("telegram_username");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DefaultAccountId");
+
+                    b.HasIndex("DefaultCreditCardId");
+
+                    b.HasIndex("TelegramChatId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("telegram_links", "finance");
+                });
+
+            modelBuilder.Entity("Finance.Domain.Entities.TelegramLinkToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("ConsumedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("consumed_at_utc");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<DateTimeOffset>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at_utc");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "ExpiresAtUtc");
+
+                    b.ToTable("telegram_link_tokens", "finance");
+                });
+
             modelBuilder.Entity("Finance.Domain.Entities.Transaction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -677,6 +782,34 @@ namespace Finance.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("Finance.Domain.Entities.TelegramLink", b =>
+                {
+                    b.HasOne("Finance.Domain.Entities.Account", null)
+                        .WithMany()
+                        .HasForeignKey("DefaultAccountId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Finance.Domain.Entities.CreditCard", null)
+                        .WithMany()
+                        .HasForeignKey("DefaultCreditCardId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Finance.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Finance.Domain.Entities.TelegramLinkToken", b =>
+                {
+                    b.HasOne("Finance.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Finance.Domain.Entities.Transaction", b =>

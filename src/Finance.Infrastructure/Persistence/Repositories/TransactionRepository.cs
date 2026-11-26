@@ -136,6 +136,32 @@ internal sealed class TransactionRepository(FinanceDbContext dbContext) : ITrans
             .ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<Transaction>> GetForProjectionRangeAsync(
+        Guid userId,
+        DateOnly startDate,
+        DateOnly endDate,
+        IReadOnlyCollection<Guid> invoiceIds,
+        CancellationToken ct = default)
+    {
+        if (invoiceIds.Count == 0)
+        {
+            return await dbContext.Transactions
+                .AsNoTracking()
+                .Where(t => t.UserId == userId &&
+                    t.CreditCardInvoiceId == null &&
+                    t.TransactionDate >= startDate &&
+                    t.TransactionDate <= endDate)
+                .ToListAsync(ct);
+        }
+
+        return await dbContext.Transactions
+            .AsNoTracking()
+            .Where(t => t.UserId == userId &&
+                ((t.CreditCardInvoiceId != null && invoiceIds.Contains(t.CreditCardInvoiceId.Value)) ||
+                 (t.CreditCardInvoiceId == null && t.TransactionDate >= startDate && t.TransactionDate <= endDate)))
+            .ToListAsync(ct);
+    }
+
     public async Task<IReadOnlyList<Transaction>> GetUpcomingPendingAccountTransactionsAsync(
         Guid userId,
         DateOnly fromDate,

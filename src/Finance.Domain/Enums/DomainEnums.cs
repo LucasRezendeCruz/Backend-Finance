@@ -67,5 +67,8 @@ public enum SecurityAuditEventType
     SessionRevoked,
     PasswordChanged,
     AccountArchived,
-    LargeTransactionCreated
+    LargeTransactionCreated,
+    TelegramLinkRequested,
+    TelegramLinked,
+    TelegramUnlinked
 }

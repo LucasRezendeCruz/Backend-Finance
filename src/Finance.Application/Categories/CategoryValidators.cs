@@ -20,6 +20,10 @@ public sealed class CreateCategoryCommandValidator : AbstractValidator<CreateCat
         RuleFor(x => x.Color)
             .MaximumLength(20).WithMessage("A cor deve ter no máximo 20 caracteres.")
             .When(x => !string.IsNullOrWhiteSpace(x.Color));
+
+        RuleFor(x => x.MonthlyBudget)
+            .GreaterThan(0m).WithMessage("O orçamento mensal deve ser maior que zero.")
+            .When(x => x.MonthlyBudget.HasValue);
     }
 }
 
@@ -38,5 +42,9 @@ public sealed class UpdateCategoryCommandValidator : AbstractValidator<UpdateCat
         RuleFor(x => x.Color)
             .MaximumLength(20).WithMessage("A cor deve ter no máximo 20 caracteres.")
             .When(x => !string.IsNullOrWhiteSpace(x.Color));
+
+        RuleFor(x => x.MonthlyBudget)
+            .GreaterThan(0m).WithMessage("O orçamento mensal deve ser maior que zero.")
+            .When(x => x.MonthlyBudget.HasValue);
     }
 }

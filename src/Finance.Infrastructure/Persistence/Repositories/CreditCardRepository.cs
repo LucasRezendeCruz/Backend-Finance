@@ -127,6 +127,25 @@ internal sealed class CreditCardRepository(FinanceDbContext dbContext) : ICredit
                 dbContext.CreditCards.Any(c => c.Id == inv.CreditCardId && c.UserId == userId))
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<CreditCardInvoice>> GetInvoicesForRangeAsync(
+        Guid userId,
+        int startYear,
+        int startMonth,
+        int endYear,
+        int endMonth,
+        CancellationToken ct = default)
+    {
+        int startKey = startYear * 12 + startMonth;
+        int endKey = endYear * 12 + endMonth;
+
+        return await dbContext.CreditCardInvoices
+            .AsNoTracking()
+            .Where(inv => (inv.ReferenceYear * 12 + inv.ReferenceMonth) >= startKey &&
+                (inv.ReferenceYear * 12 + inv.ReferenceMonth) <= endKey &&
+                dbContext.CreditCards.Any(c => c.Id == inv.CreditCardId && c.UserId == userId))
+            .ToListAsync(ct);
+    }
+
     public async Task<IReadOnlyList<CreditCardInvoice>> GetUpcomingUnpaidInvoicesAsync(
         Guid userId,
         DateOnly fromDate,

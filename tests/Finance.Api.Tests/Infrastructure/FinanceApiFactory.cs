@@ -21,6 +21,44 @@ public sealed class FakeDateTimeProvider(DateTimeOffset initialUtcNow) : IDateTi
     public void SetUtcNow(DateTimeOffset utcNow) => UtcNow = utcNow;
 }
 
+public sealed record SentTelegramMessage(
+    long ChatId,
+    string Text,
+    IReadOnlyList<TelegramInlineButton>? InlineButtons);
+
+public sealed class FakeTelegramBotClient(string webhookSecret, string botUsername = "RazoTestBot") : ITelegramBotClient
+{
+    public List<SentTelegramMessage> SentMessages { get; } = [];
+    public List<(string CallbackQueryId, string? Text)> AnsweredCallbacks { get; } = [];
+
+    public bool IsConfigured => true;
+    public string Mode => "Webhook";
+    public string? ConfiguredBotUsername => botUsername;
+    public string? WebhookSecret => webhookSecret;
+
+    public Task SendMessageAsync(
+        long chatId,
+        string text,
+        IReadOnlyList<TelegramInlineButton>? inlineButtons = null,
+        CancellationToken ct = default)
+    {
+        SentMessages.Add(new SentTelegramMessage(chatId, text, inlineButtons));
+        return Task.CompletedTask;
+    }
+
+    public Task AnswerCallbackQueryAsync(string callbackQueryId, string? text = null, CancellationToken ct = default)
+    {
+        AnsweredCallbacks.Add((callbackQueryId, text));
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<TelegramBotUpdate>> GetUpdatesAsync(long? offset, int timeoutSeconds, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<TelegramBotUpdate>>([]);
+
+    public Task<string?> ResolveBotUsernameAsync(CancellationToken ct = default)
+        => Task.FromResult<string?>(botUsername);
+}
+
 public sealed class FinanceApiFactory(
     int authStrictPermitLimit = 1000,
     int authStrictWindowSeconds = 60,
@@ -29,11 +67,14 @@ public sealed class FinanceApiFactory(
 {
     public const string AllowedWebOrigin = "http://localhost:5173";
     public const string TestJwtSecret = "TEST_ONLY_SIGNING_KEY_AT_LEAST_32_CHARS_LONG_123456";
+    public const string TestTelegramWebhookSecret = "TEST_TELEGRAM_WEBHOOK_SECRET_987654321";
 
     private readonly SqliteConnection _connection = CreateOpenConnection();
 
     public FakeDateTimeProvider Clock { get; } =
         new(new DateTimeOffset(2026, 11, 24, 15, 0, 0, TimeSpan.Zero));
+
+    public FakeTelegramBotClient TelegramBot { get; } = new(TestTelegramWebhookSecret);
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -78,6 +119,9 @@ public sealed class FinanceApiFactory(
 
             services.RemoveAll<IDateTimeProvider>();
             services.AddSingleton<IDateTimeProvider>(Clock);
+
+            services.RemoveAll<ITelegramBotClient>();
+            services.AddSingleton<ITelegramBotClient>(TelegramBot);
         });
     }
 

@@ -8,6 +8,7 @@ using System.Threading.RateLimiting;
 using Finance.Api.Configuration;
 using Finance.Api.Middleware;
 using Finance.Api.Services;
+using Finance.Api.Services.Telegram;
 using Finance.Application;
 using Finance.Application.Common.Interfaces;
 using Finance.Infrastructure;
@@ -35,12 +36,26 @@ builder.Services.AddSingleton(sp =>
 
 builder.Services.Configure<AuthCookieOptions>(builder.Configuration.GetSection(AuthCookieOptions.SectionName));
 builder.Services.Configure<RateLimitOptions>(builder.Configuration.GetSection(RateLimitOptions.SectionName));
+builder.Services.Configure<TelegramOptions>(options =>
+{
+    builder.Configuration.GetSection(TelegramOptions.SectionName).Bind(options);
+    options.ApplyEnvironmentOverrides(builder.Configuration);
+});
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<ICurrentUserService, HttpCurrentUserService>();
+builder.Services.AddScoped<HttpCurrentUserService>();
+builder.Services.AddScoped<ICurrentUserService>(sp => sp.GetRequiredService<HttpCurrentUserService>());
+builder.Services.AddScoped<ICurrentUserOverride>(sp => sp.GetRequiredService<HttpCurrentUserService>());
+
+builder.Services.AddHttpClient("telegram", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(35);
+});
+builder.Services.AddSingleton<ITelegramBotClient, HttpTelegramBotClient>();
+builder.Services.AddHostedService<TelegramPollingBackgroundService>();
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

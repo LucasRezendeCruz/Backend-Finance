@@ -252,7 +252,7 @@ public sealed class RecurrenceService(
         return created;
     }
 
-    private static List<DateOnly> GetOccurrencesInMonth(RecurrenceRule rule, int year, int month)
+    internal static List<DateOnly> GetOccurrencesInMonth(RecurrenceRule rule, int year, int month)
     {
         var result = new List<DateOnly>();
         int daysInMonth = DateTime.DaysInMonth(year, month);

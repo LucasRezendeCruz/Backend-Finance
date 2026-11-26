@@ -18,5 +18,12 @@ public interface ICreditCardRepository
     Task<IReadOnlyList<CreditCardInvoice>> GetUnpaidInvoicesByCardAsync(Guid creditCardId, CancellationToken ct = default);
     Task AddInvoiceAsync(CreditCardInvoice invoice, CancellationToken ct = default);
     Task<IReadOnlyList<CreditCardInvoice>> GetInvoicesForMonthAsync(Guid userId, int year, int month, CancellationToken ct = default);
+    Task<IReadOnlyList<CreditCardInvoice>> GetInvoicesForRangeAsync(
+        Guid userId,
+        int startYear,
+        int startMonth,
+        int endYear,
+        int endMonth,
+        CancellationToken ct = default);
     Task<IReadOnlyList<CreditCardInvoice>> GetUpcomingUnpaidInvoicesAsync(Guid userId, DateOnly fromDate, CancellationToken ct = default);
 }

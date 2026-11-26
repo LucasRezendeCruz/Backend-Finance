@@ -22,6 +22,8 @@ public sealed class FinanceDbContext(DbContextOptions<FinanceDbContext> options)
     public DbSet<CreditCardInvoice> CreditCardInvoices => Set<CreditCardInvoice>();
     public DbSet<RecurrenceRule> RecurrenceRules => Set<RecurrenceRule>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
+    public DbSet<TelegramLink> TelegramLinks => Set<TelegramLink>();
+    public DbSet<TelegramLinkToken> TelegramLinkTokens => Set<TelegramLinkToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

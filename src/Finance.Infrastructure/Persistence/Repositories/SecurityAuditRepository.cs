@@ -7,6 +7,9 @@ namespace Finance.Infrastructure.Persistence.Repositories;
 
 internal sealed class SecurityAuditRepository(FinanceDbContext dbContext) : ISecurityAuditRepository
 {
+    public async Task AddAsync(SecurityAuditLog auditLog, CancellationToken ct = default)
+        => await dbContext.SecurityAuditLogs.AddAsync(auditLog, ct);
+
     public async Task<(IReadOnlyList<SecurityAuditLog> Items, int TotalCount)> GetUserAuditLogsAsync(
         Guid userId,
         int page,
